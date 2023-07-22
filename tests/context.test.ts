@@ -8,9 +8,9 @@ describe('Context', () => {
   });
 
   it('should be able to use the Logger', async () => {
-    const ctx = await createApx(join(__dirname, 'fixtures', 'discovery-01'));
+    const apx = await createApx(join(__dirname, 'fixtures', 'discovery-01'));
 
-    ctx.run(async () => {
+    apx.run(async () => {
       const logger = await useProvider<Logger>('logger');
       expect(logger).toBeDefined();
       expect(logger.child).toBeDefined();

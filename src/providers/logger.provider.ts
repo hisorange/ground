@@ -1,7 +1,3 @@
 import { pino } from 'pino';
 
-export default function LoggerProvider() {
-  return pino({
-    name: 'ground',
-  });
-}
+export default async () => pino({ name: 'apx' });

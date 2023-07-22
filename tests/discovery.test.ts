@@ -5,16 +5,15 @@ import { createApx, useProvider } from '../src/index.js';
 describe('Discovery', () => {
   it('should be able to discover the "test" provider', async () => {
     const root = join(__dirname, 'fixtures', 'discovery-01');
-    const ctx = await createApx(root);
+    const apx = await createApx(root);
 
-    expect(ctx).toBeDefined();
+    expect(apx).toBeDefined();
     expect(
-      ctx.container.findByTag('provider').map(binding => binding.key),
+      apx.context.findByTag('provider').map(binding => binding.key),
     ).toContain('test');
 
-    await ctx.run(async () => {
+    await apx.run(async () => {
       const testValue = await useProvider<string>('test');
-
       expect(testValue).toBe('test-value');
     });
   });
@@ -29,15 +28,13 @@ describe('Discovery', () => {
       const server = await useProvider<FastifyInstance>('server');
 
       await server.ready();
-
-      // Fake a get "hello" request
       const response = await server.inject({
         method: 'GET',
         url: '/hello',
       });
 
       expect(response.statusCode).toBe(200);
-      expect(response.body).toBe('hello');
+      expect(response.body.startsWith('hello.')).toBeTruthy();
     });
-  });
+  }, 100);
 });

@@ -8,20 +8,20 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { basename, join } from 'path';
 import { Logger } from 'pino';
 import { async as walkDir } from 'walkdir';
-import { container } from './container.js';
+import { IoC } from './container.js';
 import LoggerProvider from './providers/logger.provider.js';
 import ServerProvider from './providers/server.provider.js';
 
 const bindTo = async (
-  inContext: Context,
-  address: BindingAddress<unknown>,
+  ctx: Context,
+  addr: BindingAddress<unknown>,
   resolver: () => Promise<unknown>,
   tag?: string,
 ) => {
   try {
-    container.current = inContext;
+    IoC.current = ctx;
     const value = await resolver();
-    const binding = inContext.bind(address);
+    const binding = ctx.bind(addr);
 
     tag && binding.tag(tag);
 
@@ -34,7 +34,7 @@ const bindTo = async (
       return Binding['valueOrProxy'](resolutionCtx, value);
     });
   } finally {
-    container.current = null;
+    IoC.current = null;
   }
 };
 
@@ -45,7 +45,7 @@ const bindSyncTo = (
   tag?: string,
 ) => {
   try {
-    container.current = inContext;
+    IoC.current = inContext;
     const value = resolver();
     const binding = inContext.bind(address);
 
@@ -60,7 +60,7 @@ const bindSyncTo = (
       return Binding['valueOrProxy'](resolutionCtx, value);
     });
   } finally {
-    container.current = null;
+    IoC.current = null;
   }
 };
 
@@ -99,17 +99,16 @@ const registerRoutes = async (pathRoot: string, ctxRoot: Context) => {
       ) => {
         const ctxRequest = new Context(ctxRoot);
 
-        logger.info(`Handling route [GET] "${path}"`);
-
         bindSyncTo(ctxRequest, 'request', () => inRequest);
         bindSyncTo(ctxRequest, 'reply', () => inReply);
 
-        logger.info(`Executing route [GET] "${path}"`);
+        let response: unknown;
 
-        container.current = ctxRequest;
-        const response = await handlers.GET();
-        container.current.close();
-        container.current = null;
+        try {
+          response = await IoC.request.run(ctxRequest, handlers.GET);
+        } finally {
+          ctxRequest.close();
+        }
 
         return response;
       };
@@ -132,9 +131,9 @@ export const createApx = async (pathRoot: string) => {
 
   return {
     run: async <T>(fn: () => Promise<T>) => {
-      container.current = ctxRoot;
+      IoC.current = ctxRoot;
       const result = await fn();
-      container.current = null;
+      IoC.current = null;
       return result;
     },
     context: ctxRoot,

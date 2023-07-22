@@ -1,10 +1,10 @@
 import { BindingAddress, Constructor } from '@loopback/context';
-import { container } from '../container.js';
+import { IoC } from '../container.js';
 
 export const useProvider = <T = unknown>(
   address: BindingAddress<T> | Constructor<object>,
 ): Promise<T> | T => {
-  if (!container.current) {
+  if (!IoC.current) {
     throw new Error('Context is not created');
   }
 
@@ -17,5 +17,5 @@ export const useProvider = <T = unknown>(
     }
   }
 
-  return container.current!.get<T>(address);
+  return IoC.current!.get<T>(address);
 };
